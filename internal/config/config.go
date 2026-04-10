@@ -47,6 +47,9 @@ func Load() (*Config, error) {
 	if cfg.JWT.TTL == 0 {
 		cfg.JWT.TTL = 30 * time.Minute
 	}
+	if cfg.JWT.Secret == "" {
+		cfg.JWT.Secret = "test_secret"
+	}
 	if cfg.Database.SSLMode == "" {
 		cfg.Database.SSLMode = "disable"
 	}

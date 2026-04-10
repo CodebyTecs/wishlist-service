@@ -11,13 +11,20 @@ import (
 	"time"
 
 	httpadapter "github.com/CodebyTecs/wishlist-service/internal/adapters/http"
+	"github.com/CodebyTecs/wishlist-service/internal/adapters/http/middleware"
 	"github.com/CodebyTecs/wishlist-service/internal/config"
+	"github.com/CodebyTecs/wishlist-service/internal/handlers"
+	"github.com/CodebyTecs/wishlist-service/internal/repository"
+	"github.com/CodebyTecs/wishlist-service/internal/service"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type App struct {
 	cfg    *config.Config
 	logger *slog.Logger
 	server *http.Server
+	router http.Handler
+	dbPool *pgxpool.Pool
 }
 
 func New(cfg *config.Config) *App {
@@ -39,7 +46,7 @@ func (a *App) Run() error {
 
 	a.server = &http.Server{
 		Addr:              a.cfg.HTTPAddr(),
-		Handler:           httpadapter.NewRouter(),
+		Handler:           a.router,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       a.cfg.HTTPServer.Timeout,
 		WriteTimeout:      a.cfg.HTTPServer.Timeout,
@@ -66,6 +73,9 @@ func (a *App) Run() error {
 	if err := a.server.Shutdown(shutdownCtx); err != nil {
 		return err
 	}
+	if a.dbPool != nil {
+		a.dbPool.Close()
+	}
 
 	a.logger.Info("server stopped gracefully")
 	return nil
@@ -80,9 +90,26 @@ func (a *App) wireDependencies(_ context.Context) error {
 		"db_name", a.cfg.Database.DBName,
 	)
 
-	// TODO: connect DB pool and run migrations
-	// TODO: initialize repositories
-	// TODO: initialize use cases (auth, wishlist, wishlist-item, public reservation)
-	// TODO: initialize HTTP handlers and auth middleware
+	dbCtx, cancelDB := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelDB()
+
+	dbPool, err := pgxpool.New(dbCtx, a.cfg.DatabaseDSN())
+	if err != nil {
+		return err
+	}
+	if err := dbPool.Ping(dbCtx); err != nil {
+		dbPool.Close()
+		return err
+	}
+	a.dbPool = dbPool
+
+	userRepository := repository.NewPostgresUserRepository(dbPool)
+
+	tokenService := service.NewJWTService(a.cfg.JWT.Secret, a.cfg.JWT.TTL)
+	authService := service.NewAuthService(userRepository, tokenService)
+	authHandler := handlers.NewAuthHandler(authService)
+	authMiddleware := middleware.NewAuthMiddleware(tokenService)
+
+	a.router = httpadapter.NewRouter(authHandler, authMiddleware.RequireAuth)
 	return nil
 }
