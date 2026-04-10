@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: wishlist-service-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-wishlist_db}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-wishlist_db}"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wishlist-service
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      HTTP_SERVER_ADDRESS: ${HTTP_SERVER_ADDRESS:-0.0.0.0}
+      HTTP_SERVER_PORT: ${HTTP_SERVER_PORT:-8080}
+      HTTP_SERVER_TIMEOUT: ${HTTP_SERVER_TIMEOUT:-4s}
+
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-wishlist_db}
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-5432}
+
+      JWT_SECRET: ${JWT_SECRET:-test_secret}
+      JWT_TTL: ${JWT_TTL:-30m}
+    ports:
+      - "${HTTP_SERVER_PORT:-8080}:8080"
+    restart: unless-stopped
+
+volumes:
+  pg_data:
