@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -25,6 +26,7 @@ type DatabaseConfig struct {
 	Password string `env:"DB_PASSWORD"`
 	Host     string `env:"DB_HOST"`
 	Port     string `env:"DB_PORT"`
+	SSLMode  string `env:"DB_SSLMODE"`
 }
 
 type JWTConfig struct {
@@ -42,6 +44,28 @@ func Load() (*Config, error) {
 	if cfg.HTTPServer.Timeout == 0 {
 		cfg.HTTPServer.Timeout = 15 * time.Second
 	}
+	if cfg.JWT.TTL == 0 {
+		cfg.JWT.TTL = 30 * time.Minute
+	}
+	if cfg.Database.SSLMode == "" {
+		cfg.Database.SSLMode = "disable"
+	}
 
 	return &cfg, nil
+}
+
+func (c *Config) HTTPAddr() string {
+	return net.JoinHostPort(c.HTTPServer.Address, c.HTTPServer.Port)
+}
+
+func (c *Config) DatabaseDSN() string {
+	return fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		c.Database.Username,
+		c.Database.Password,
+		c.Database.Host,
+		c.Database.Port,
+		c.Database.DBName,
+		c.Database.SSLMode,
+	)
 }
