@@ -107,9 +107,12 @@ func (a *App) wireDependencies(_ context.Context) error {
 
 	tokenService := service.NewJWTService(a.cfg.JWT.Secret, a.cfg.JWT.TTL)
 	authService := service.NewAuthService(userRepository, tokenService)
+	userService := service.NewUserService(userRepository)
+
 	authHandler := handlers.NewAuthHandler(authService)
+	userHandler := handlers.NewUserHandler(userService)
 	authMiddleware := middleware.NewAuthMiddleware(tokenService)
 
-	a.router = httpadapter.NewRouter(authHandler, authMiddleware.RequireAuth)
+	a.router = httpadapter.NewRouter(authHandler, userHandler, authMiddleware.RequireAuth)
 	return nil
 }

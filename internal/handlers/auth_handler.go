@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/CodebyTecs/wishlist-service/internal/adapters/http/middleware"
 	"github.com/CodebyTecs/wishlist-service/internal/domain"
 	"github.com/CodebyTecs/wishlist-service/internal/service"
 	"github.com/CodebyTecs/wishlist-service/pkg/httpx"
@@ -57,16 +56,6 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpx.WriteJSON(w, http.StatusOK, authResponse{AccessToken: accessToken})
-}
-
-func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
-	userID, ok := middleware.UserIDFromContext(r.Context())
-	if !ok {
-		httpx.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": domain.ErrUnauthorized.Error()})
-		return
-	}
-
-	httpx.WriteJSON(w, http.StatusOK, map[string]string{"user_id": userID})
 }
 
 func writeAuthError(w http.ResponseWriter, err error) {
