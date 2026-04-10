@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/CodebyTecs/wishlist-service/internal/adapters/http/response"
 	"github.com/CodebyTecs/wishlist-service/internal/domain"
 	"github.com/CodebyTecs/wishlist-service/internal/service"
-	"github.com/CodebyTecs/wishlist-service/pkg/httpx"
 )
 
 type contextKey string
@@ -26,13 +26,13 @@ func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tokenString, err := extractBearerToken(r.Header.Get("Authorization"))
 		if err != nil {
-			httpx.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": domain.ErrUnauthorized.Error()})
+			response.WriteError(w, http.StatusUnauthorized, domain.ErrUnauthorized.Error())
 			return
 		}
 
 		userID, err := m.tokens.ParseAccessToken(tokenString)
 		if err != nil {
-			httpx.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": domain.ErrUnauthorized.Error()})
+			response.WriteError(w, http.StatusUnauthorized, domain.ErrUnauthorized.Error())
 			return
 		}
 

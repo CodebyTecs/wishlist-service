@@ -4,6 +4,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/CodebyTecs/wishlist-service/internal/adapters/http/dto"
+	"github.com/CodebyTecs/wishlist-service/internal/adapters/http/response"
 	"github.com/CodebyTecs/wishlist-service/internal/domain"
 	"github.com/CodebyTecs/wishlist-service/internal/service"
 	"github.com/CodebyTecs/wishlist-service/pkg/httpx"
@@ -13,23 +15,14 @@ type AuthHandler struct {
 	authService service.AuthService
 }
 
-type authRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type authResponse struct {
-	AccessToken string `json:"access_token"`
-}
-
 func NewAuthHandler(authService service.AuthService) *AuthHandler {
 	return &AuthHandler{authService: authService}
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
-	var req authRequest
+	var req dto.AuthRequest
 	if err := httpx.DecodeJSON(r, &req); err != nil {
-		httpx.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": domain.ErrInvalidRequest.Error()})
+		response.WriteError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
 
@@ -39,13 +32,13 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpx.WriteJSON(w, http.StatusCreated, authResponse{AccessToken: accessToken})
+	httpx.WriteJSON(w, http.StatusCreated, dto.AuthResponse{AccessToken: accessToken})
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var req authRequest
+	var req dto.AuthRequest
 	if err := httpx.DecodeJSON(r, &req); err != nil {
-		httpx.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": domain.ErrInvalidRequest.Error()})
+		response.WriteError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
 
@@ -55,18 +48,18 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpx.WriteJSON(w, http.StatusOK, authResponse{AccessToken: accessToken})
+	httpx.WriteJSON(w, http.StatusOK, dto.AuthResponse{AccessToken: accessToken})
 }
 
 func writeAuthError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, domain.ErrInvalidRequest):
-		httpx.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		response.WriteError(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, domain.ErrAlreadyExists):
-		httpx.WriteJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
+		response.WriteError(w, http.StatusConflict, err.Error())
 	case errors.Is(err, domain.ErrUnauthorized):
-		httpx.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": err.Error()})
+		response.WriteError(w, http.StatusUnauthorized, err.Error())
 	default:
-		httpx.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		response.WriteError(w, http.StatusInternalServerError, "internal server error")
 	}
 }

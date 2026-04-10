@@ -9,6 +9,7 @@ import (
 func NewRouter(
 	authHandler *handlers.AuthHandler,
 	userHandler *handlers.UserHandler,
+	wishlistHandler *handlers.WishlistHandler,
 	requireAuth func(http.Handler) http.Handler,
 ) http.Handler {
 	mux := http.NewServeMux()
@@ -24,6 +25,13 @@ func NewRouter(
 
 	if userHandler != nil && requireAuth != nil {
 		mux.Handle("GET /users/me", requireAuth(http.HandlerFunc(userHandler.Me)))
+	}
+	if wishlistHandler != nil && requireAuth != nil {
+		mux.Handle("POST /wishlists", requireAuth(http.HandlerFunc(wishlistHandler.Create)))
+		mux.Handle("GET /wishlists", requireAuth(http.HandlerFunc(wishlistHandler.List)))
+		mux.Handle("GET /wishlists/{id}", requireAuth(http.HandlerFunc(wishlistHandler.GetByID)))
+		mux.Handle("PATCH /wishlists/{id}", requireAuth(http.HandlerFunc(wishlistHandler.UpdateByID)))
+		mux.Handle("DELETE /wishlists/{id}", requireAuth(http.HandlerFunc(wishlistHandler.DeleteByID)))
 	}
 
 	return mux

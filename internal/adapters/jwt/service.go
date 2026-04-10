@@ -1,4 +1,4 @@
-package service
+package jwt
 
 import (
 	"time"
@@ -8,19 +8,19 @@ import (
 	"github.com/CodebyTecs/wishlist-service/internal/domain"
 )
 
-type JWTService struct {
+type Service struct {
 	secret []byte
 	ttl    time.Duration
 }
 
-func NewJWTService(secret string, ttl time.Duration) *JWTService {
-	return &JWTService{
+func NewService(secret string, ttl time.Duration) *Service {
+	return &Service{
 		secret: []byte(secret),
 		ttl:    ttl,
 	}
 }
 
-func (s *JWTService) GenerateAccessToken(userID string) (string, error) {
+func (s *Service) GenerateAccessToken(userID string) (string, error) {
 	now := time.Now().UTC()
 	claims := jwt.RegisteredClaims{
 		Subject:   userID,
@@ -32,7 +32,7 @@ func (s *JWTService) GenerateAccessToken(userID string) (string, error) {
 	return token.SignedString(s.secret)
 }
 
-func (s *JWTService) ParseAccessToken(tokenString string) (string, error) {
+func (s *Service) ParseAccessToken(tokenString string) (string, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, domain.ErrUnauthorized

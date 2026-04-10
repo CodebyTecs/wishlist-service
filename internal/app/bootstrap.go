@@ -12,6 +12,7 @@ import (
 
 	httpadapter "github.com/CodebyTecs/wishlist-service/internal/adapters/http"
 	"github.com/CodebyTecs/wishlist-service/internal/adapters/http/middleware"
+	jwtadapter "github.com/CodebyTecs/wishlist-service/internal/adapters/jwt"
 	"github.com/CodebyTecs/wishlist-service/internal/config"
 	"github.com/CodebyTecs/wishlist-service/internal/handlers"
 	"github.com/CodebyTecs/wishlist-service/internal/repository"
@@ -104,15 +105,18 @@ func (a *App) wireDependencies(_ context.Context) error {
 	a.dbPool = dbPool
 
 	userRepository := repository.NewPostgresUserRepository(dbPool)
+	wishlistRepository := repository.NewPostgresWishlistRepository(dbPool)
 
-	tokenService := service.NewJWTService(a.cfg.JWT.Secret, a.cfg.JWT.TTL)
+	tokenService := jwtadapter.NewService(a.cfg.JWT.Secret, a.cfg.JWT.TTL)
 	authService := service.NewAuthService(userRepository, tokenService)
 	userService := service.NewUserService(userRepository)
+	wishlistService := service.NewWishlistService(wishlistRepository)
 
 	authHandler := handlers.NewAuthHandler(authService)
 	userHandler := handlers.NewUserHandler(userService)
+	wishlistHandler := handlers.NewWishlistHandler(wishlistService)
 	authMiddleware := middleware.NewAuthMiddleware(tokenService)
 
-	a.router = httpadapter.NewRouter(authHandler, userHandler, authMiddleware.RequireAuth)
+	a.router = httpadapter.NewRouter(authHandler, userHandler, wishlistHandler, authMiddleware.RequireAuth)
 	return nil
 }
