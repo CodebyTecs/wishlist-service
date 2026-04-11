@@ -43,7 +43,7 @@ func (h *WishlistHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wishlist, err := h.wishlists.Create(r.Context(), userID, service.CreateWishlistInput{
+	wishlist, err := h.wishlists.Create(r.Context(), userID, domain.CreateWishlistInput{
 		Name:        req.Name,
 		Description: req.Description,
 		EventDate:   eventDate,
@@ -119,7 +119,7 @@ func (h *WishlistHandler) UpdateByID(w http.ResponseWriter, r *http.Request) {
 		parsedDate = d
 	}
 
-	wishlist, err := h.wishlists.UpdateByID(r.Context(), userID, r.PathValue("id"), service.UpdateWishlistInput{
+	wishlist, err := h.wishlists.UpdateByID(r.Context(), userID, r.PathValue("id"), domain.UpdateWishlistInput{
 		Name:              trimmedName,
 		Description:       trimmedDescription,
 		EventDate:         parsedDate,

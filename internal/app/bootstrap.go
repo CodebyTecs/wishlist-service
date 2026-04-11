@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -18,6 +19,8 @@ import (
 	"github.com/CodebyTecs/wishlist-service/internal/repository"
 	"github.com/CodebyTecs/wishlist-service/internal/service"
 	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
 )
 
 type App struct {
@@ -104,19 +107,52 @@ func (a *App) wireDependencies(_ context.Context) error {
 	}
 	a.dbPool = dbPool
 
+	migrationsCtx, cancelMigrations := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancelMigrations()
+	if err := runMigrations(migrationsCtx, a.cfg.DatabaseDSN()); err != nil {
+		dbPool.Close()
+		return err
+	}
+
 	userRepository := repository.NewPostgresUserRepository(dbPool)
 	wishlistRepository := repository.NewPostgresWishlistRepository(dbPool)
+	wishlistItemRepository := repository.NewPostgresWishlistItemRepository(dbPool)
 
 	tokenService := jwtadapter.NewService(a.cfg.JWT.Secret, a.cfg.JWT.TTL)
 	authService := service.NewAuthService(userRepository, tokenService)
 	userService := service.NewUserService(userRepository)
 	wishlistService := service.NewWishlistService(wishlistRepository)
+	wishlistItemService := service.NewWishlistItemService(wishlistItemRepository)
+	publicService := service.NewPublicService(wishlistRepository, wishlistItemRepository)
 
 	authHandler := handlers.NewAuthHandler(authService)
 	userHandler := handlers.NewUserHandler(userService)
 	wishlistHandler := handlers.NewWishlistHandler(wishlistService)
+	wishlistItemHandler := handlers.NewWishlistItemHandler(wishlistItemService)
+	publicHandler := handlers.NewPublicHandler(publicService)
 	authMiddleware := middleware.NewAuthMiddleware(tokenService)
 
-	a.router = httpadapter.NewRouter(authHandler, userHandler, wishlistHandler, authMiddleware.RequireAuth)
+	a.router = httpadapter.NewRouter(
+		authHandler,
+		userHandler,
+		wishlistHandler,
+		wishlistItemHandler,
+		publicHandler,
+		authMiddleware.RequireAuth,
+	)
 	return nil
+}
+
+func runMigrations(ctx context.Context, dsn string) error {
+	db, err := sql.Open("pgx", dsn)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	if err := goose.SetDialect("postgres"); err != nil {
+		return err
+	}
+
+	return goose.UpContext(ctx, db, "./migrations")
 }

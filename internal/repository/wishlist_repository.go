@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -13,20 +12,12 @@ import (
 	"github.com/CodebyTecs/wishlist-service/internal/domain"
 )
 
-type WishlistUpdate struct {
-	Name              string
-	Description       string
-	EventDate         time.Time
-	UpdateName        bool
-	UpdateDescription bool
-	UpdateEventDate   bool
-}
-
 type WishlistRepository interface {
 	Create(ctx context.Context, wishlist domain.Wishlist) (domain.Wishlist, error)
 	ListByUserID(ctx context.Context, userID string) ([]domain.Wishlist, error)
 	GetByIDAndUserID(ctx context.Context, wishlistID, userID string) (domain.Wishlist, error)
-	UpdateByIDAndUserID(ctx context.Context, wishlistID, userID string, update WishlistUpdate) (domain.Wishlist, error)
+	GetByPublicToken(ctx context.Context, publicToken string) (domain.Wishlist, error)
+	UpdateByIDAndUserID(ctx context.Context, wishlistID, userID string, update domain.WishlistUpdate) (domain.Wishlist, error)
 	DeleteByIDAndUserID(ctx context.Context, wishlistID, userID string) error
 }
 
@@ -140,11 +131,7 @@ func (r *PostgresWishlistRepository) GetByIDAndUserID(ctx context.Context, wishl
 	return domain.Wishlist{}, err
 }
 
-func (r *PostgresWishlistRepository) UpdateByIDAndUserID(
-	ctx context.Context,
-	wishlistID, userID string,
-	update WishlistUpdate,
-) (domain.Wishlist, error) {
+func (r *PostgresWishlistRepository) UpdateByIDAndUserID(ctx context.Context, wishlistID, userID string, update domain.WishlistUpdate) (domain.Wishlist, error) {
 	const query = `
 		UPDATE wishlists
 		SET
@@ -180,6 +167,36 @@ func (r *PostgresWishlistRepository) UpdateByIDAndUserID(
 	if err == nil {
 		updated.Description = descriptionToString(description)
 		return updated, nil
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.Wishlist{}, domain.ErrNotFound
+	}
+
+	return domain.Wishlist{}, err
+}
+
+func (r *PostgresWishlistRepository) GetByPublicToken(ctx context.Context, publicToken string) (domain.Wishlist, error) {
+	const query = `
+		SELECT id, user_id, name, description, event_date, public_token, created_at
+		FROM wishlists
+		WHERE public_token = $1
+		LIMIT 1
+	`
+
+	var w domain.Wishlist
+	var description sql.NullString
+	err := r.pool.QueryRow(ctx, query, publicToken).Scan(
+		&w.ID,
+		&w.UserID,
+		&w.Name,
+		&description,
+		&w.EventDate,
+		&w.PublicToken,
+		&w.CreatedAt,
+	)
+	if err == nil {
+		w.Description = descriptionToString(description)
+		return w, nil
 	}
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Wishlist{}, domain.ErrNotFound

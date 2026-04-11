@@ -10,26 +10,11 @@ import (
 	"github.com/CodebyTecs/wishlist-service/pkg/uid"
 )
 
-type CreateWishlistInput struct {
-	Name        string
-	Description string
-	EventDate   time.Time
-}
-
-type UpdateWishlistInput struct {
-	Name              string
-	Description       string
-	EventDate         time.Time
-	UpdateName        bool
-	UpdateDescription bool
-	UpdateEventDate   bool
-}
-
 type WishlistService interface {
-	Create(ctx context.Context, userID string, input CreateWishlistInput) (domain.Wishlist, error)
+	Create(ctx context.Context, userID string, input domain.CreateWishlistInput) (domain.Wishlist, error)
 	ListByUserID(ctx context.Context, userID string) ([]domain.Wishlist, error)
 	GetByID(ctx context.Context, userID, wishlistID string) (domain.Wishlist, error)
-	UpdateByID(ctx context.Context, userID, wishlistID string, input UpdateWishlistInput) (domain.Wishlist, error)
+	UpdateByID(ctx context.Context, userID, wishlistID string, input domain.UpdateWishlistInput) (domain.Wishlist, error)
 	DeleteByID(ctx context.Context, userID, wishlistID string) error
 }
 
@@ -41,7 +26,7 @@ func NewWishlistService(repo repository.WishlistRepository) WishlistService {
 	return &wishlistService{repo: repo}
 }
 
-func (s *wishlistService) Create(ctx context.Context, userID string, input CreateWishlistInput) (domain.Wishlist, error) {
+func (s *wishlistService) Create(ctx context.Context, userID string, input domain.CreateWishlistInput) (domain.Wishlist, error) {
 	userID = strings.TrimSpace(userID)
 	if userID == "" || !uid.IsValidUUID(userID) {
 		return domain.Wishlist{}, domain.ErrInvalidRequest
@@ -91,11 +76,7 @@ func (s *wishlistService) GetByID(ctx context.Context, userID, wishlistID string
 	return s.repo.GetByIDAndUserID(ctx, wishlistID, userID)
 }
 
-func (s *wishlistService) UpdateByID(
-	ctx context.Context,
-	userID, wishlistID string,
-	input UpdateWishlistInput,
-) (domain.Wishlist, error) {
+func (s *wishlistService) UpdateByID(ctx context.Context, userID, wishlistID string, input domain.UpdateWishlistInput) (domain.Wishlist, error) {
 	userID = strings.TrimSpace(userID)
 	wishlistID = strings.TrimSpace(wishlistID)
 	if userID == "" || wishlistID == "" || !uid.IsValidUUID(userID) || !uid.IsValidUUID(wishlistID) {
@@ -105,7 +86,7 @@ func (s *wishlistService) UpdateByID(
 		return domain.Wishlist{}, domain.ErrInvalidRequest
 	}
 
-	return s.repo.UpdateByIDAndUserID(ctx, wishlistID, userID, repository.WishlistUpdate{
+	return s.repo.UpdateByIDAndUserID(ctx, wishlistID, userID, domain.WishlistUpdate{
 		Name:              strings.TrimSpace(input.Name),
 		Description:       strings.TrimSpace(input.Description),
 		EventDate:         input.EventDate,
