@@ -14,6 +14,8 @@ profile.cov
 vendor/
 
 .env
+.env.*
+!.env.example
 
 .idea/
 .vscode/
