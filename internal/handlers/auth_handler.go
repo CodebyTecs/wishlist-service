@@ -19,6 +19,18 @@ func NewAuthHandler(authService service.AuthService) *AuthHandler {
 	return &AuthHandler{authService: authService}
 }
 
+// Register godoc
+// @Summary Register user
+// @Description Регистрация пользователя по email и паролю.
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body dto.AuthRequest true "Registration payload"
+// @Success 201 {object} dto.AuthResponse
+// @Failure 400 {object} response.ErrorPayload
+// @Failure 409 {object} response.ErrorPayload
+// @Failure 500 {object} response.ErrorPayload
+// @Router /auth/register [post]
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req dto.AuthRequest
 	if err := httpx.DecodeJSON(r, &req); err != nil {
@@ -35,6 +47,18 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusCreated, dto.AuthResponse{AccessToken: accessToken})
 }
 
+// Login godoc
+// @Summary Login user
+// @Description Вход пользователя по email и паролю.
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body dto.AuthRequest true "Login payload"
+// @Success 200 {object} dto.AuthResponse
+// @Failure 400 {object} response.ErrorPayload
+// @Failure 401 {object} response.ErrorPayload
+// @Failure 500 {object} response.ErrorPayload
+// @Router /auth/login [post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req dto.AuthRequest
 	if err := httpx.DecodeJSON(r, &req); err != nil {

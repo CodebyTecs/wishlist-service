@@ -24,6 +24,20 @@ func NewWishlistHandler(wishlists service.WishlistService) *WishlistHandler {
 	return &WishlistHandler{wishlists: wishlists}
 }
 
+// Create godoc
+// @Summary Create wishlist
+// @Description Создает вишлист текущего пользователя.
+// @Tags Wishlists
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.CreateWishlistRequest true "Wishlist create payload"
+// @Success 201 {object} domain.Wishlist
+// @Failure 400 {object} response.ErrorPayload
+// @Failure 401 {object} response.ErrorPayload
+// @Failure 409 {object} response.ErrorPayload
+// @Failure 500 {object} response.ErrorPayload
+// @Router /wishlists [post]
 func (h *WishlistHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {
@@ -56,6 +70,17 @@ func (h *WishlistHandler) Create(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusCreated, wishlist)
 }
 
+// List godoc
+// @Summary List wishlists
+// @Description Возвращает список вишлистов текущего пользователя.
+// @Tags Wishlists
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} domain.Wishlist
+// @Failure 400 {object} response.ErrorPayload
+// @Failure 401 {object} response.ErrorPayload
+// @Failure 500 {object} response.ErrorPayload
+// @Router /wishlists [get]
 func (h *WishlistHandler) List(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {
@@ -72,6 +97,19 @@ func (h *WishlistHandler) List(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, wishlists)
 }
 
+// GetByID godoc
+// @Summary Get wishlist by ID
+// @Description Возвращает вишлист по ID, если он принадлежит текущему пользователю.
+// @Tags Wishlists
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Wishlist ID (UUID)"
+// @Success 200 {object} domain.Wishlist
+// @Failure 400 {object} response.ErrorPayload
+// @Failure 401 {object} response.ErrorPayload
+// @Failure 404 {object} response.ErrorPayload
+// @Failure 500 {object} response.ErrorPayload
+// @Router /wishlists/{id} [get]
 func (h *WishlistHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {
@@ -89,6 +127,22 @@ func (h *WishlistHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, wishlist)
 }
 
+// UpdateByID godoc
+// @Summary Update wishlist
+// @Description Частично обновляет вишлист текущего пользователя.
+// @Tags Wishlists
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Wishlist ID (UUID)"
+// @Param request body dto.UpdateWishlistRequest true "Wishlist patch payload"
+// @Success 200 {object} domain.Wishlist
+// @Failure 400 {object} response.ErrorPayload
+// @Failure 401 {object} response.ErrorPayload
+// @Failure 404 {object} response.ErrorPayload
+// @Failure 409 {object} response.ErrorPayload
+// @Failure 500 {object} response.ErrorPayload
+// @Router /wishlists/{id} [patch]
 func (h *WishlistHandler) UpdateByID(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {
@@ -135,6 +189,18 @@ func (h *WishlistHandler) UpdateByID(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, wishlist)
 }
 
+// DeleteByID godoc
+// @Summary Delete wishlist
+// @Description Удаляет вишлист текущего пользователя.
+// @Tags Wishlists
+// @Security BearerAuth
+// @Param id path string true "Wishlist ID (UUID)"
+// @Success 204 "No Content"
+// @Failure 400 {object} response.ErrorPayload
+// @Failure 401 {object} response.ErrorPayload
+// @Failure 404 {object} response.ErrorPayload
+// @Failure 500 {object} response.ErrorPayload
+// @Router /wishlists/{id} [delete]
 func (h *WishlistHandler) DeleteByID(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {

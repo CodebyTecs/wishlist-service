@@ -19,6 +19,18 @@ func NewUserHandler(users service.UserService) *UserHandler {
 	return &UserHandler{users: users}
 }
 
+// Me godoc
+// @Summary Get current user
+// @Description Возвращает текущего авторизованного пользователя.
+// @Tags Users
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} domain.User
+// @Failure 400 {object} response.ErrorPayload
+// @Failure 401 {object} response.ErrorPayload
+// @Failure 404 {object} response.ErrorPayload
+// @Failure 500 {object} response.ErrorPayload
+// @Router /users/me [get]
 func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {

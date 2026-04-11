@@ -3,7 +3,9 @@ package http
 import (
 	"net/http"
 
+	_ "github.com/CodebyTecs/wishlist-service/docs/swagger"
 	"github.com/CodebyTecs/wishlist-service/internal/handlers"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 func NewRouter(authHandler *handlers.AuthHandler, userHandler *handlers.UserHandler, wishlistHandler *handlers.WishlistHandler, wishlistItemHandler *handlers.WishlistItemHandler, publicHandler *handlers.PublicHandler, requireAuth func(http.Handler) http.Handler) http.Handler {
@@ -39,6 +41,7 @@ func NewRouter(authHandler *handlers.AuthHandler, userHandler *handlers.UserHand
 		mux.HandleFunc("GET /public/{token}", publicHandler.GetWishlistByToken)
 		mux.HandleFunc("POST /public/{token}/reserve/{itemID}", publicHandler.ReserveByTokenAndItemID)
 	}
+	mux.Handle("GET /swagger/", httpSwagger.Handler(httpSwagger.URL("/swagger/doc.json")))
 
 	return mux
 }

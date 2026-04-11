@@ -1,0 +1,731 @@
+basePath: /
+definitions:
+  domain.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+    type: object
+  domain.Wishlist:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      event_date:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      public_token:
+        type: string
+      user_id:
+        type: string
+    type: object
+  domain.WishlistItem:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_reserved:
+        type: boolean
+      name:
+        type: string
+      priority:
+        type: integer
+      product_link:
+        type: string
+      reserved_at:
+        type: string
+      wishlist_id:
+        type: string
+    type: object
+  dto.AuthRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  dto.AuthResponse:
+    properties:
+      access_token:
+        type: string
+    type: object
+  dto.CreateWishlistItemRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      priority:
+        type: integer
+      product_link:
+        type: string
+    type: object
+  dto.CreateWishlistRequest:
+    properties:
+      description:
+        type: string
+      event_date:
+        type: string
+      name:
+        type: string
+    type: object
+  dto.PublicReserveResponse:
+    properties:
+      status:
+        type: string
+    type: object
+  dto.PublicWishlistItem:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      is_reserved:
+        type: boolean
+      name:
+        type: string
+      priority:
+        type: integer
+      product_link:
+        type: string
+      reserved_at:
+        type: string
+    type: object
+  dto.PublicWishlistResponse:
+    properties:
+      description:
+        type: string
+      event_date:
+        type: string
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.PublicWishlistItem'
+        type: array
+      name:
+        type: string
+    type: object
+  dto.UpdateWishlistItemRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      priority:
+        type: integer
+      product_link:
+        type: string
+    type: object
+  dto.UpdateWishlistRequest:
+    properties:
+      description:
+        type: string
+      event_date:
+        type: string
+      name:
+        type: string
+    type: object
+  response.ErrorPayload:
+    properties:
+      error:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: 'REST API для вишлистов: авторизация, CRUD вишлистов/подарков, публичный
+    просмотр и резервирование.'
+  title: Wishlist Service API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Вход пользователя по email и паролю.
+      parameters:
+      - description: Login payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+      summary: Login user
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Регистрация пользователя по email и паролю.
+      parameters:
+      - description: Registration payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+      summary: Register user
+      tags:
+      - Auth
+  /public/{token}:
+    get:
+      description: Возвращает публичный вишлист с позициями по токену. Авторизация
+        не требуется.
+      parameters:
+      - description: Public token
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PublicWishlistResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+      summary: Get public wishlist
+      tags:
+      - Public
+  /public/{token}/reserve/{itemID}:
+    post:
+      description: Резервирует подарок по публичному токену вишлиста и ID позиции.
+        Авторизация не требуется.
+      parameters:
+      - description: Public token
+        in: path
+        name: token
+        required: true
+        type: string
+      - description: Item ID (UUID)
+        in: path
+        name: itemID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PublicReserveResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+      summary: Reserve public wishlist item
+      tags:
+      - Public
+  /users/me:
+    get:
+      description: Возвращает текущего авторизованного пользователя.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - Users
+  /wishlists:
+    get:
+      description: Возвращает список вишлистов текущего пользователя.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Wishlist'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+      security:
+      - BearerAuth: []
+      summary: List wishlists
+      tags:
+      - Wishlists
+    post:
+      consumes:
+      - application/json
+      description: Создает вишлист текущего пользователя.
+      parameters:
+      - description: Wishlist create payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateWishlistRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Wishlist'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+      security:
+      - BearerAuth: []
+      summary: Create wishlist
+      tags:
+      - Wishlists
+  /wishlists/{id}:
+    delete:
+      description: Удаляет вишлист текущего пользователя.
+      parameters:
+      - description: Wishlist ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+      security:
+      - BearerAuth: []
+      summary: Delete wishlist
+      tags:
+      - Wishlists
+    get:
+      description: Возвращает вишлист по ID, если он принадлежит текущему пользователю.
+      parameters:
+      - description: Wishlist ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Wishlist'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+      security:
+      - BearerAuth: []
+      summary: Get wishlist by ID
+      tags:
+      - Wishlists
+    patch:
+      consumes:
+      - application/json
+      description: Частично обновляет вишлист текущего пользователя.
+      parameters:
+      - description: Wishlist ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Wishlist patch payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateWishlistRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Wishlist'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+      security:
+      - BearerAuth: []
+      summary: Update wishlist
+      tags:
+      - Wishlists
+  /wishlists/{wishlistID}/items:
+    get:
+      description: Возвращает позиции в указанном вишлисте текущего пользователя.
+      parameters:
+      - description: Wishlist ID (UUID)
+        in: path
+        name: wishlistID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.WishlistItem'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+      security:
+      - BearerAuth: []
+      summary: List wishlist items
+      tags:
+      - WishlistItems
+    post:
+      consumes:
+      - application/json
+      description: Создает позицию в указанном вишлисте текущего пользователя.
+      parameters:
+      - description: Wishlist ID (UUID)
+        in: path
+        name: wishlistID
+        required: true
+        type: string
+      - description: Wishlist item create payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateWishlistItemRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.WishlistItem'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+      security:
+      - BearerAuth: []
+      summary: Create wishlist item
+      tags:
+      - WishlistItems
+  /wishlists/{wishlistID}/items/{itemID}:
+    delete:
+      description: Удаляет позицию из указанного вишлиста текущего пользователя.
+      parameters:
+      - description: Wishlist ID (UUID)
+        in: path
+        name: wishlistID
+        required: true
+        type: string
+      - description: Item ID (UUID)
+        in: path
+        name: itemID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+      security:
+      - BearerAuth: []
+      summary: Delete wishlist item
+      tags:
+      - WishlistItems
+    get:
+      description: Возвращает позицию по ID из указанного вишлиста текущего пользователя.
+      parameters:
+      - description: Wishlist ID (UUID)
+        in: path
+        name: wishlistID
+        required: true
+        type: string
+      - description: Item ID (UUID)
+        in: path
+        name: itemID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.WishlistItem'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+      security:
+      - BearerAuth: []
+      summary: Get wishlist item by ID
+      tags:
+      - WishlistItems
+    patch:
+      consumes:
+      - application/json
+      description: Частично обновляет позицию в указанном вишлисте текущего пользователя.
+      parameters:
+      - description: Wishlist ID (UUID)
+        in: path
+        name: wishlistID
+        required: true
+        type: string
+      - description: Item ID (UUID)
+        in: path
+        name: itemID
+        required: true
+        type: string
+      - description: Wishlist item patch payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateWishlistItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.WishlistItem'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorPayload'
+      security:
+      - BearerAuth: []
+      summary: Update wishlist item
+      tags:
+      - WishlistItems
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    description: 'JWT access token with Bearer prefix. Example: "Bearer <token>"'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

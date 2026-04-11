@@ -19,3 +19,7 @@ type PublicWishlistResponse struct {
 	EventDate   time.Time            `json:"event_date"`
 	Items       []PublicWishlistItem `json:"items"`
 }
+
+type PublicReserveResponse struct {
+	Status string `json:"status"`
+}

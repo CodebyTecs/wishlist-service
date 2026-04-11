@@ -8,6 +8,16 @@ import (
 	"github.com/CodebyTecs/wishlist-service/internal/config"
 )
 
+// @title Wishlist Service API
+// @version 1.0
+// @description REST API для вишлистов: авторизация, CRUD вишлистов/подарков, публичный просмотр и резервирование.
+// @BasePath /
+// @schemes http
+//
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description JWT access token with Bearer prefix. Example: "Bearer <token>"
 func main() {
 	cfg, err := config.Load()
 	if err != nil {

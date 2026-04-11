@@ -19,6 +19,17 @@ func NewPublicHandler(public service.PublicService) *PublicHandler {
 	return &PublicHandler{public: public}
 }
 
+// GetWishlistByToken godoc
+// @Summary Get public wishlist
+// @Description Возвращает публичный вишлист с позициями по токену. Авторизация не требуется.
+// @Tags Public
+// @Produce json
+// @Param token path string true "Public token"
+// @Success 200 {object} dto.PublicWishlistResponse
+// @Failure 400 {object} response.ErrorPayload
+// @Failure 404 {object} response.ErrorPayload
+// @Failure 500 {object} response.ErrorPayload
+// @Router /public/{token} [get]
 func (h *PublicHandler) GetWishlistByToken(w http.ResponseWriter, r *http.Request) {
 	token := r.PathValue("token")
 
@@ -50,6 +61,19 @@ func (h *PublicHandler) GetWishlistByToken(w http.ResponseWriter, r *http.Reques
 	})
 }
 
+// ReserveByTokenAndItemID godoc
+// @Summary Reserve public wishlist item
+// @Description Резервирует подарок по публичному токену вишлиста и ID позиции. Авторизация не требуется.
+// @Tags Public
+// @Produce json
+// @Param token path string true "Public token"
+// @Param itemID path string true "Item ID (UUID)"
+// @Success 200 {object} dto.PublicReserveResponse
+// @Failure 400 {object} response.ErrorPayload
+// @Failure 404 {object} response.ErrorPayload
+// @Failure 409 {object} response.ErrorPayload
+// @Failure 500 {object} response.ErrorPayload
+// @Router /public/{token}/reserve/{itemID} [post]
 func (h *PublicHandler) ReserveByTokenAndItemID(w http.ResponseWriter, r *http.Request) {
 	err := h.public.ReserveItem(r.Context(), r.PathValue("token"), r.PathValue("itemID"))
 	if err != nil {
@@ -57,7 +81,7 @@ func (h *PublicHandler) ReserveByTokenAndItemID(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	httpx.WriteJSON(w, http.StatusOK, map[string]string{"status": "reserved"})
+	httpx.WriteJSON(w, http.StatusOK, dto.PublicReserveResponse{Status: "reserved"})
 }
 
 func writePublicError(w http.ResponseWriter, err error) {

@@ -4,11 +4,12 @@ GO ?= go
 COMPOSE := $(shell docker compose version >/dev/null 2>&1 && echo "docker compose" || echo "docker-compose")
 GO_ENV := GOCACHE=/tmp/go-build GOMODCACHE=/tmp/go-mod
 LINT_ENV := $(GO_ENV) GOLANGCI_LINT_CACHE=/tmp/golangci-lint-cache
+SWAG_ENV := GOCACHE=/tmp/go-build-swagger GOMODCACHE=/tmp/go-mod-swagger
 
 GOOSE ?= goose
 DB_URL ?= postgres://postgres:postgres@localhost:5432/wishlist_db?sslmode=disable
 
-.PHONY: run up down logs test test-cover fmt lint lint-fix tidy migrate-up migrate-down migrate-status
+.PHONY: run up down logs test test-cover fmt lint lint-fix tidy swagger migrate-up migrate-down migrate-status
 
 run:
 	$(GO_ENV) $(GO) run ./cmd/wishlist-service
@@ -39,6 +40,9 @@ lint-fix:
 
 tidy:
 	$(GO_ENV) $(GO) mod tidy
+
+swagger:
+	$(SWAG_ENV) $(GO) run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g cmd/wishlist-service/main.go -o docs/swagger --parseInternal --outputTypes go,json,yaml
 
 migrate-up:
 	$(GOOSE) -dir ./migrations postgres "$(DB_URL)" up
